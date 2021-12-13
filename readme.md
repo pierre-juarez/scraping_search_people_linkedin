@@ -1,4 +1,4 @@
-# Reto N"1 - Scrap de perfiles en LinkedIn, por búsqueda con una Chrome Extension
+# Reto Nº1 - Scrap de perfiles en LinkedIn, por búsqueda con una Chrome Extension
 
 _Creación de una extensión en Chrome, que scrapea el perfil de un usuario en LinkedIn._ ⚡
 

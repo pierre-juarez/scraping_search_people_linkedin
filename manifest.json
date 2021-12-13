@@ -2,11 +2,7 @@
   "name": "Reto #1 - Scrap Profiles LinkedIn by Search",
   "description": "Scrap de perfiles en LinkedIn por búsqueda",
   "manifest_version" : 3,
-  "version" : "1.0",
-  "background": {
-      "service_worker" : "app/background.js"
-  },
-  "permissions": ["activeTab","scripting","storage"],
+  "version" : "1.0",  
   "action": {
     "default_popup": "app/index.html",
     "default_icon" : {
@@ -26,5 +22,9 @@
     "32" : "app/img/icons/32.png",
     "48" : "app/img/icons/48.png",                   
     "128" : "app/img/icons/128.png"                   
-  }
+  },
+  "background": {
+    "service_worker" : "app/background.js"
+  },
+  "permissions": [ "tabs","activeTab","scripting","storage" ]
 }

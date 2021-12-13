@@ -1,0 +1,13 @@
+html{
+    background-color: #e4f7ff;
+}
+body{
+    font-size: 16px;
+    width: 300px;    
+}
+.content{
+    text-align: center;
+    border: 1px dashed rgba(15, 51, 168, 0.671);
+    margin: 10px;
+    padding: 15px 5px;
+}

@@ -4,37 +4,39 @@ const sleep = (seconds) => {
   });
 }
 
+const createPopup = ()=>{
+  const styleDiv = "position: fixed;z-index: 2000;width:100%; top: 0px;left: 0px;overflow: visible;display: flex;align-items: flex-end;background-color: lightgray;font-size: 10px;padding: 10px;";
+  const stylePre = "position: relative;max-height: 400px;overflow: auto;width: 100%;"
+  const div = document.createElement('div')
+  div.id = "krowdy-message"
+  div.style = styleDiv
+
+  const pre = document.createElement('pre')
+  pre.id = "krowdy-pre"
+  pre.style = stylePre
+
+  const button = document.createElement('button')
+  
+  button.id = "krowdy-button"
+  button.style = "background: gray;border: 2px solid;padding: 8px;"
+  button.innerText ="Aceptar"
+
+  const bodyElement = document.querySelector('div.body')
+  
+  bodyElement.appendChild(div)
+
+  pre.innerText = "Estamos extrayendo la información!!!!"
+  div.appendChild(pre)
+  div.appendChild(button)
+
+  button.addEventListener("click",()=>{ div.remove(); });
+
+  return {div,pre,button}
+}
+
 const scrapingProfile = async() => {  
 
-    const createPopup = ()=>{
-        const styleDiv = "position: fixed;z-index: 2000;width:100%; top: 0px;left: 0px;overflow: visible;display: flex;align-items: flex-end;background-color: lightgray;font-size: 10px;padding: 10px;";
-        const stylePre = "position: relative;max-height: 400px;overflow: auto;width: 100%;"
-        const div = document.createElement('div')
-        div.id = "krowdy-message"
-        div.style = styleDiv
-
-        const pre = document.createElement('pre')
-        pre.id = "krowdy-pre"
-        pre.style = stylePre
-
-        const button = document.createElement('button')
-        
-        button.id = "krowdy-button"
-        button.style = "background: gray;border: 2px solid;padding: 8px;"
-        button.innerText ="Aceptar"
-
-        const bodyElement = document.querySelector('div.body')
-        
-        bodyElement.appendChild(div)
-
-        pre.innerText = "Estamos extrayendo la información!!!!"
-        div.appendChild(pre)
-        div.appendChild(button)
-
-        button.addEventListener("click",()=>{ div.remove(); });
-
-        return {div,pre,button}
-    }
+  
 
     const selectorProfile = {
       name : '.text-heading-xlarge',
@@ -73,7 +75,7 @@ const scrapingProfile = async() => {
   
       const autoScrollToElement = async function(selectorCSS){
         var exists = document.querySelector(selectorCSS);
-  
+        console.log('step 1 ');
         while(exists){
   
           let maxScrollTop = document.body.clientHeight - window.innerHeight;
@@ -88,14 +90,17 @@ const scrapingProfile = async() => {
   
           let newScrollTop = Math.min(currentScrollTop + 20, maxScrollTop);
           window.scrollTo(0, newScrollTop);
+          console.log('step2');
   
         }
         console.log('Finish autoscroll to element %s',selectorCSS);
   
         return new Promise(function(resolve){
+          console.log('step3');
           resolve();
         });
       }
+      console.log('step4');
   
       const {name, pais, showContactInfo, phone, closeContacInfo, experienceInformation, educationInformation} = selectorProfile
       const nameElement =  document.querySelector(name);
@@ -104,13 +109,13 @@ const scrapingProfile = async() => {
       
       profile.name = nameElement.innerText;
       profile.pais = paisElement.innerText;    
-      showContactInfoElement.click();
-      
+      showContactInfoElement.click();    
   
       /*** scroll automático y scrap de experiencias */
       await autoScrollToElement('body');
       
       await sleep(5);
+      console.log('step5');
   
       const phoneElement =  document.querySelector(phone);
       const closeContactInfoElement = document.querySelector(closeContacInfo);
@@ -154,18 +159,19 @@ const scrapingProfile = async() => {
         });
 
         experiences.push(...experiencesData);
+        console.log('step6');
       }
 
-
       profile.experiences = experiences;
+      console.log('step7');
 
       /*** Obtención de Información de Educación */
       const educationList = document.querySelectorAll(educationInformation.list);
       const educationArray = Array.from(educationList);
       const educations = educationArray.map(elem => {
-        const institution = elem.querySelector(educationInformation.institution).innerText
-        const career = elem.querySelector(educationInformation.career).innerText
-        const date = elem.querySelector(educationInformation.date).innerText
+        const institution = elem.querySelector(educationInformation.institution)?.innerText
+        const career = elem.querySelector(educationInformation.career)?.innerText
+        const date = elem.querySelector(educationInformation.date)?.innerText
         return {institution,career,date}
       });
 
@@ -173,6 +179,7 @@ const scrapingProfile = async() => {
 
 
       closeContactInfoElement.click(); //Cierra el modal de información
+      console.log("🚀 Cerrando close");
   
     }
     
@@ -180,9 +187,11 @@ const scrapingProfile = async() => {
     pre.innerText = 'Escaneando perfil';
     
     await getContactInfo();
+
     pre.innerText = 'Perfil escaneado con exito';
     await sleep(1);
     pre.innerText = JSON.stringify(profile,null,2);
+    console.log("🚀 Instucción scrap finaliz");
     console.log('profile',profile);
     
     
@@ -191,8 +200,6 @@ const scrapingProfile = async() => {
 
 const viewProfiles = async() => {
 
-    console.log('Step 1');
-    
     const resultsInformation = {
         list : 'ul.reusable-search__entity-result-list > li',
         profilesLink: '.entity-result__title-text a.app-aware-link',
@@ -201,16 +208,14 @@ const viewProfiles = async() => {
   
     let profiles = {};
   
-    const getInformationProfile = async() => {
-      console.log('step 2');
+    const getInformationProfile = async() => {  
   
       const {profilesLink, profilesName} = resultsInformation      
       const linksElement =  document.querySelectorAll(profilesLink);            
       
         /*** Obtención de Información de Educación */
         const linksArray = Array.from(linksElement);
-        const dataProfiles = linksArray.map(elem => {
-          console.log('step 3');
+        const dataProfiles = linksArray.map(elem => {          
           const link = elem.href;
           const name = elem.querySelector(profilesName).innerText;
           const scrap = false;          
@@ -221,25 +226,20 @@ const viewProfiles = async() => {
     }
       
     await getInformationProfile();
-    localStorage.setItem('dataProfiles', JSON.stringify(profiles));
-
-  
-    console.log("🚀 ~ file: contentscript.js ~ line 248 ~ getInformationProfile ~ profiles", profiles)
+    localStorage.setItem('dataProfiles', JSON.stringify(profiles));      
     
-    chrome.runtime.sendMessage({action: 'processProfileStart'}, function(response){
+    chrome.runtime.sendMessage({action: 'processProfileStart'}, async function(response){
           const {message} = response;
-          console.log(message);
+                    
           if(message === 'processProfile'){
 
               /**Recorrer el contenido del localstorage */
               let result = JSON.parse(localStorage.getItem("dataProfiles"));
-              // console.log("🚀 ~ file: contentscript.js ~ line 234 ~ chrome.runtime.sendMessage ~ result", result)
 
               for (let i = 0; i < result.length; i++) {
                 const elem = result[i];
-                // console.log("🚀 ~ file: contentscript.js ~ line 239 ~ chrome.runtime.sendMessage ~ elem", elem)
                 if(!elem.scrap){
-                  await sleep(5);
+                  await sleep(3);
                   chrome.runtime.sendMessage({action: 'sendProfile', url: elem.link, name: elem.name});
                   return;
                 }
@@ -249,43 +249,23 @@ const viewProfiles = async() => {
           }
       }
   );
-    // chrome.tabs.query({ active:true, currentWindow:true}).then((tabs) => {
-    //   const [tab] = tabs                        
-    //   // tab.id
-    //   console.log("🚀 ~ file: contentscript.js ~ line 230 ~ chrome.tabs.query ~ tab.id", tab.id)
-    //   chrome.tabs.update(tab.id, {url: 'https://www.linkedin.com/in/midudev/'}).then(() =>{
-    //       sendResponse({message:'Iniciando scraping'});                
-    //       console.log('Iniciando scraping');
-    //   });
-    // });
-
+ 
 
     
   
 }
 
-
-// (function(){
-//     chrome.runtime.onConnect.addListener(function(port){
-//         port.onMessage.addListener(async (message) => {
-//             const {action} = message;
-//             if(action === 'scrapingProfile'){
-//                 await scrapingProfile();
-//             }
-//         });
-//     })
-// })()
-
 (function(){
     chrome.runtime.onConnect.addListener(function(port){
         port.onMessage.addListener(async (message) => {
-          const {action} = message;          
-          console.log("🚀 Recibiendo mensaje")
+          const {action} = message;                  
+          console.log("🚀 Recibiendo mensaje, message",message)
             if(action === 'viewProfiles'){
-                await viewProfiles();
-                console.log("🚀 Mensaje recibido")
-            }else if(action === 'scrapingProfile'){
-              await scrapingProfile();
+                await viewProfiles();                
+            }else if(action === 'scrapingProfile'){              
+                // console.log("🚀 ~ file: contentscript.js ~ line 266 ~ port.onMessage.addListener ~ first", first)
+                await scrapingProfile();              
+              // return true;
             }
         });
     })
