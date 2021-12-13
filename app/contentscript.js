@@ -1,10 +1,10 @@
-const scrapingProfile = async() => {
+const sleep = (seconds) => {
+  return new Promise((resolve) =>{
+    setTimeout(function(){ resolve(); },seconds*1000);
+  });
+}
 
-    const sleep = (seconds) => {
-      return new Promise((resolve) =>{
-        setTimeout(function(){ resolve(); },seconds*1000);
-      });
-    }
+const scrapingProfile = async() => {  
 
     const createPopup = ()=>{
         const styleDiv = "position: fixed;z-index: 2000;width:100%; top: 0px;left: 0px;overflow: visible;display: flex;align-items: flex-end;background-color: lightgray;font-size: 10px;padding: 10px;";
@@ -189,14 +189,106 @@ const scrapingProfile = async() => {
   
 }
 
+const viewProfiles = async() => {
+
+    console.log('Step 1');
+    
+    const resultsInformation = {
+        list : 'ul.reusable-search__entity-result-list > li',
+        profilesLink: '.entity-result__title-text a.app-aware-link',
+        profilesName: 'span[aria-hidden="true"]'
+    };
+  
+    let profiles = {};
+  
+    const getInformationProfile = async() => {
+      console.log('step 2');
+  
+      const {profilesLink, profilesName} = resultsInformation      
+      const linksElement =  document.querySelectorAll(profilesLink);            
+      
+        /*** Obtención de Información de Educación */
+        const linksArray = Array.from(linksElement);
+        const dataProfiles = linksArray.map(elem => {
+          console.log('step 3');
+          const link = elem.href;
+          const name = elem.querySelector(profilesName).innerText;
+          const scrap = false;          
+          return {link, name, scrap}
+        });
+        
+      profiles = dataProfiles;
+    }
+      
+    await getInformationProfile();
+    localStorage.setItem('dataProfiles', JSON.stringify(profiles));
+
+  
+    console.log("🚀 ~ file: contentscript.js ~ line 248 ~ getInformationProfile ~ profiles", profiles)
+    
+    chrome.runtime.sendMessage({action: 'processProfileStart'}, function(response){
+          const {message} = response;
+          console.log(message);
+          if(message === 'processProfile'){
+
+              /**Recorrer el contenido del localstorage */
+              let result = JSON.parse(localStorage.getItem("dataProfiles"));
+              // console.log("🚀 ~ file: contentscript.js ~ line 234 ~ chrome.runtime.sendMessage ~ result", result)
+
+              for (let i = 0; i < result.length; i++) {
+                const elem = result[i];
+                // console.log("🚀 ~ file: contentscript.js ~ line 239 ~ chrome.runtime.sendMessage ~ elem", elem)
+                if(!elem.scrap){
+                  await sleep(5);
+                  chrome.runtime.sendMessage({action: 'sendProfile', url: elem.link, name: elem.name});
+                  return;
+                }
+              }
+              
+              
+          }
+      }
+  );
+    // chrome.tabs.query({ active:true, currentWindow:true}).then((tabs) => {
+    //   const [tab] = tabs                        
+    //   // tab.id
+    //   console.log("🚀 ~ file: contentscript.js ~ line 230 ~ chrome.tabs.query ~ tab.id", tab.id)
+    //   chrome.tabs.update(tab.id, {url: 'https://www.linkedin.com/in/midudev/'}).then(() =>{
+    //       sendResponse({message:'Iniciando scraping'});                
+    //       console.log('Iniciando scraping');
+    //   });
+    // });
+
+
+    
+  
+}
+
+
+// (function(){
+//     chrome.runtime.onConnect.addListener(function(port){
+//         port.onMessage.addListener(async (message) => {
+//             const {action} = message;
+//             if(action === 'scrapingProfile'){
+//                 await scrapingProfile();
+//             }
+//         });
+//     })
+// })()
+
 (function(){
     chrome.runtime.onConnect.addListener(function(port){
         port.onMessage.addListener(async (message) => {
-            const {action} = message;
-            if(action === 'scrapingProfile'){
-                await scrapingProfile();
+          const {action} = message;          
+          console.log("🚀 Recibiendo mensaje")
+            if(action === 'viewProfiles'){
+                await viewProfiles();
+                console.log("🚀 Mensaje recibido")
+            }else if(action === 'scrapingProfile'){
+              await scrapingProfile();
             }
         });
     })
 })()
   
+
