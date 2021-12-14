@@ -4,10 +4,44 @@ html{
 body{
     font-size: 16px;
     width: 300px;    
+    margin: 0;
+    padding: 0;
 }
 .content{
     text-align: center;
     border: 1px dashed rgba(15, 51, 168, 0.671);
     margin: 10px;
     padding: 15px 5px;
+}
+button{
+    text-align: center;
+    font-size: 1rem;
+    padding: 0.5rem 1.4rem;
+    border: 1px solid #cf3d3d;
+    background-color: #cf3d3d;
+    border-radius: 1rem;
+    color: white;
+    margin: 3px 0px;
+    cursor: pointer;
+}
+button:first-child{
+    border: 1px solid #6868e7;
+    background-color: #6868e7;
+}
+.d-none{
+    display: none;
+}
+.d-flex{
+    display: flex;
+}
+.container-information{
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    display: flex;    
+    margin: 0.8rem 0px;
+}
+#textResponse{
+    margin: 1rem;
+    text-align: center;
 }

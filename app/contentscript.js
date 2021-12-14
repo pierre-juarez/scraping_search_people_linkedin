@@ -90,7 +90,7 @@ const scrapingProfile = async() => {
           
   
         }
-        console.log('Finish autoscroll to element %s',selectorCSS);
+        // console.log('Finish autoscroll to element %s',selectorCSS);
   
         return new Promise(function(resolve){          
           resolve();
@@ -176,12 +176,15 @@ const scrapingProfile = async() => {
     
     const {div, pre, button} = createPopup();
     pre.innerText = 'Escaneando perfil';
+    chrome.runtime.sendMessage({status:'Estamos analizando el perfil.🤓'});
     
     await getContactInfo();
 
     pre.innerText = 'Perfil escaneado con exito';
+    
     await sleep(1);
     pre.innerText = JSON.stringify(profile,null,2);
+    chrome.runtime.sendMessage({status:'Información guardada bajo llave.🤐'});
 
     let profilesSave = localStorage.getItem('profilesLinkedin');
     let dataProfilesSave = localStorage.getItem('dataProfiles');
@@ -210,9 +213,7 @@ const scrapingProfile = async() => {
     }    
 
     await sleep(3);
-    chrome.runtime.sendMessage({action: 'return'});
-
-  
+    chrome.runtime.sendMessage({action: 'return',status:'Volvamos a nuestra lista de resultados. 👀🚀'});
   
 }
 
@@ -252,52 +253,69 @@ const viewProfiles = async() => {
     if(dataProfilesSave == null){      
       localStorage.setItem('dataProfiles', JSON.stringify(profiles));            
     }
-  
-    // localStorage.setItem('dataProfiles', JSON.stringify(profiles));      
 
+    function saveDataProfiles(filename, content) {
+      let element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+      element.setAttribute('download', filename);
+  
+      element.style.display = 'none';
+      document.body.appendChild(element);
+  
+      element.click();
+  
+      document.body.removeChild(element);
+  }
+  
     
-    
-    chrome.runtime.sendMessage({action: 'processProfileStart'}, async function(response){
+    chrome.runtime.sendMessage({action: 'processProfileStart',status:'Iniciando scrap de los perfiles😎...'}, async function(response){
           const {message} = response;
                     
           if(message === 'processProfile'){
 
               /**Recorrer el contenido del localstorage */
 
-              let dataProfiles = JSON.parse(localStorage.getItem("dataProfiles"));
+              let dataProfiles = JSON.parse(localStorage.getItem("dataProfiles")), contador = 0;
 
               for (let i = 0; i < dataProfiles.length; i++) {
+
                 const elem = dataProfiles[i];
+
                 if(!elem.scrap){
-                  await sleep(5);
-                  chrome.runtime.sendMessage({action: 'sendProfile', url: elem.link, name: elem.name});
-                  return;
+                    await sleep(5);
+                    saveDataProfiles(`${elem.name}.txt`,elem);
+                    chrome.runtime.sendMessage({action: 'sendProfile', url: elem.link, name: elem.name, status:`Abriendo el perfil de: ${elem.name}.😬`});
+                    return;
                 }else{
-                  chrome.runtime.sendMessage({action: 'endScraping'});
-                  return;
-                }
+                    contador = contador + 1;                  
+                }                
+                
               }
               
+              if(contador >=  10){
+                  chrome.runtime.sendMessage({action: 'endScraping',status:'¡El scraping ha finalizado!🥳 Hemos guardado los datos por ti en un archivo ".txt"🧐'});           
+                  return;
+              }
+
               
           }
       }
-  );
- 
-
-    
+  );   
   
 }
 
 (function(){
     chrome.runtime.onConnect.addListener(function(port){
         port.onMessage.addListener(async (message) => {
-          const {action} = message;                            
-            if(action === 'viewProfiles'){
+          const {action} = message;  
+
+            if( action === 'startScrap' || action === 'viewProfiles'){
+                if(action === 'startScrap'){ localStorage.removeItem("dataProfiles"); localStorage.removeItem("profilesLinkedin"); }
                 await viewProfiles();                
             }else if(action === 'scrapingProfile'){                              
                 await scrapingProfile();              
-              // return true;
             }
+
         });
     })
 })()
