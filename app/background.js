@@ -1,5 +1,5 @@
  //Mejorar con localstorage
-let enlace = null, activeTabID, urlCurrent, estado = false;
+let enlace = null, activeTabID, urlCurrent, estado = false, urlHome;
 
 
 /** Implementé esta función porque el "tabActiveId" no me aparece en el chrome.tabs.query:( */
@@ -36,6 +36,16 @@ chrome.runtime.onMessage.addListener( function(request, sender, sendResponse){
         //     console.log("🚀 ~ file: background.js ~ line 10 ~ chrome.runtime.onMessage.addListener ~ url", url)
             
         // });
+    }else if(action === 'return'){
+        console.log("🚀 ~ file: background.js ~ line 40 ~ chrome.runtime.onMessage.addListener ~ action", action)
+        
+        chrome.tabs.update(activeTabID, {url: urlHome }).then(() =>{                                
+            console.log('Open url home...');           
+        });
+    }else if(action === 'endScraping'){
+        /** Mostrar mensaje */
+        console.log('El scraping ha finalizado');
+        
     }
     return true;
 });
@@ -56,6 +66,7 @@ chrome.tabs.onUpdated.addListener( function(tabId,changeInfo, tab){
         if(enlace !== null && enlace !== undefined){
             port = chrome.tabs.connect(tab.id);
             if((enlace).substr(0,56) === 'https://www.linkedin.com/search/results/people/?keywords'){
+                urlHome = enlace;
                 port.postMessage({action: 'viewProfiles'});            
                 console.log('Iniciamos el scrap de perfiles');
             }else if((enlace).substr(0,28) === 'https://www.linkedin.com/in/'){                

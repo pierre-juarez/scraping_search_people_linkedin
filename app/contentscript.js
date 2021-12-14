@@ -36,12 +36,10 @@ const createPopup = ()=>{
 
 const scrapingProfile = async() => {  
 
-  
-
     const selectorProfile = {
       name : '.text-heading-xlarge',
       pais : 'div.mt2>div.pb2>span.text-body-small',
-      showContactInfo : 'div.pb5 > div.mt2 > div.pb2 > span.pv-text-details__separator > a',
+      showContactInfo : '.pv-text-details__left-panel > .pv-text-details__separator > a',
       phone : 'section.ci-phone > ul > li > span',
       closeContacInfo: '.artdeco-modal__dismiss',
       experienceInformation:{
@@ -74,8 +72,7 @@ const scrapingProfile = async() => {
     const getContactInfo = async() => {
   
       const autoScrollToElement = async function(selectorCSS){
-        var exists = document.querySelector(selectorCSS);
-        console.log('step 1 ');
+        var exists = document.querySelector(selectorCSS);        
         while(exists){
   
           let maxScrollTop = document.body.clientHeight - window.innerHeight;
@@ -86,22 +83,20 @@ const scrapingProfile = async() => {
             break;
           }
   
-          await sleep(0.05);
+          await sleep(0.10);
   
           let newScrollTop = Math.min(currentScrollTop + 20, maxScrollTop);
           window.scrollTo(0, newScrollTop);
-          console.log('step2');
+          
   
         }
         console.log('Finish autoscroll to element %s',selectorCSS);
   
-        return new Promise(function(resolve){
-          console.log('step3');
+        return new Promise(function(resolve){          
           resolve();
         });
-      }
-      console.log('step4');
-  
+      }      
+
       const {name, pais, showContactInfo, phone, closeContacInfo, experienceInformation, educationInformation} = selectorProfile
       const nameElement =  document.querySelector(name);
       const paisElement =  document.querySelector(pais);
@@ -114,8 +109,7 @@ const scrapingProfile = async() => {
       /*** scroll automático y scrap de experiencias */
       await autoScrollToElement('body');
       
-      await sleep(5);
-      console.log('step5');
+      await sleep(5);      
   
       const phoneElement =  document.querySelector(phone);
       const closeContactInfoElement = document.querySelector(closeContacInfo);
@@ -158,12 +152,10 @@ const scrapingProfile = async() => {
             return {title,date,company,description}
         });
 
-        experiences.push(...experiencesData);
-        console.log('step6');
+        experiences.push(...experiencesData);        
       }
 
-      profile.experiences = experiences;
-      console.log('step7');
+      profile.experiences = experiences;      
 
       /*** Obtención de Información de Educación */
       const educationList = document.querySelectorAll(educationInformation.list);
@@ -178,8 +170,7 @@ const scrapingProfile = async() => {
       profile.educations = educations;
 
 
-      closeContactInfoElement.click(); //Cierra el modal de información
-      console.log("🚀 Cerrando close");
+      closeContactInfoElement.click(); //Cierra el modal de información      
   
     }
     
@@ -191,14 +182,43 @@ const scrapingProfile = async() => {
     pre.innerText = 'Perfil escaneado con exito';
     await sleep(1);
     pre.innerText = JSON.stringify(profile,null,2);
-    console.log("🚀 Instucción scrap finaliz");
-    console.log('profile',profile);
+
+    let profilesSave = localStorage.getItem('profilesLinkedin');
+    let dataProfilesSave = localStorage.getItem('dataProfiles');
+    const profilesScrap = [];
+
+
+    if(dataProfilesSave != null){      
+      let dataProfilesArray = JSON.parse(dataProfilesSave);
+      const dataProfileProcess = dataProfilesArray.map( (elem) => {
+          if(elem.name === profile.name){ elem.scrap = true; }
+          return elem;
+      });
+      localStorage.setItem('dataProfiles', JSON.stringify(dataProfileProcess));      
+    }
+
     
+    profilesScrap.push(profile);
     
+  
+    if(profilesSave == null){      
+      localStorage.setItem('profilesLinkedin', JSON.stringify(profilesScrap));
+    } else {        
+      let data = JSON.parse(profilesSave);
+      data.push(profile);      
+      localStorage.setItem('profilesLinkedin', JSON.stringify(data));
+    }    
+
+    await sleep(3);
+    chrome.runtime.sendMessage({action: 'return'});
+
+  
   
 }
 
 const viewProfiles = async() => {
+
+    let dataProfilesSave = localStorage.getItem('dataProfiles');
 
     const resultsInformation = {
         list : 'ul.reusable-search__entity-result-list > li',
@@ -226,7 +246,16 @@ const viewProfiles = async() => {
     }
       
     await getInformationProfile();
-    localStorage.setItem('dataProfiles', JSON.stringify(profiles));      
+
+    
+
+    if(dataProfilesSave == null){      
+      localStorage.setItem('dataProfiles', JSON.stringify(profiles));            
+    }
+  
+    // localStorage.setItem('dataProfiles', JSON.stringify(profiles));      
+
+    
     
     chrome.runtime.sendMessage({action: 'processProfileStart'}, async function(response){
           const {message} = response;
@@ -234,13 +263,17 @@ const viewProfiles = async() => {
           if(message === 'processProfile'){
 
               /**Recorrer el contenido del localstorage */
-              let result = JSON.parse(localStorage.getItem("dataProfiles"));
 
-              for (let i = 0; i < result.length; i++) {
-                const elem = result[i];
+              let dataProfiles = JSON.parse(localStorage.getItem("dataProfiles"));
+
+              for (let i = 0; i < dataProfiles.length; i++) {
+                const elem = dataProfiles[i];
                 if(!elem.scrap){
-                  await sleep(3);
+                  await sleep(5);
                   chrome.runtime.sendMessage({action: 'sendProfile', url: elem.link, name: elem.name});
+                  return;
+                }else{
+                  chrome.runtime.sendMessage({action: 'endScraping'});
                   return;
                 }
               }
@@ -258,12 +291,10 @@ const viewProfiles = async() => {
 (function(){
     chrome.runtime.onConnect.addListener(function(port){
         port.onMessage.addListener(async (message) => {
-          const {action} = message;                  
-          console.log("🚀 Recibiendo mensaje, message",message)
+          const {action} = message;                            
             if(action === 'viewProfiles'){
                 await viewProfiles();                
-            }else if(action === 'scrapingProfile'){              
-                // console.log("🚀 ~ file: contentscript.js ~ line 266 ~ port.onMessage.addListener ~ first", first)
+            }else if(action === 'scrapingProfile'){                              
                 await scrapingProfile();              
               // return true;
             }
