@@ -283,7 +283,7 @@ const viewProfiles = async() => {
 
                 if(!elem.scrap){
                     await sleep(5);
-                    saveDataProfiles(`${elem.name}.txt`,elem);
+                    saveDataProfiles(elem);
                     chrome.runtime.sendMessage({action: 'sendProfile', url: elem.link, name: elem.name, status:`Abriendo el perfil de: ${elem.name}.😬`});
                     return;
                 }else{
@@ -302,6 +302,21 @@ const viewProfiles = async() => {
       }
   );   
   
+}
+
+function saveDateProfiles(data){
+  console.log('Enviando data.......')
+  fetch("saveDataProfiles.php", {
+    method: "POST", 
+    body: {data: data}
+  })
+  .then(res => res.json())
+  .then(function(res){
+      // swal(res.title, res.msg, res.type);
+      // $txtContacto.value = '';
+      console.log('La data ha sido guardada en nuestra BD');
+      console.log(res.msg);
+  });
 }
 
 (function(){
