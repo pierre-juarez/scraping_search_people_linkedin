@@ -1,8 +1,9 @@
 <?php 
 
     $conx = mysqli_connect('localhost','root','','bd_scrap_linkedin'); 
+    
+    $dataProfiles = json_decode($_POST['data'], true);
 
-    $dataProfiles = $_POST['data'];
 
     $query = "INSERT INTO tb_register(information_register, date_register) VALUES ('".$dataProfiles."',NOW())";    
     $result = mysqli_query($conx, $query);

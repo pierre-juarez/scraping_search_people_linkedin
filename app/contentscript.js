@@ -254,18 +254,6 @@ const viewProfiles = async() => {
       localStorage.setItem('dataProfiles', JSON.stringify(profiles));            
     }
 
-    function saveDataProfiles(filename, content) {
-      let element = document.createElement('a');
-      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
-      element.setAttribute('download', filename);
-  
-      element.style.display = 'none';
-      document.body.appendChild(element);
-  
-      element.click();
-  
-      document.body.removeChild(element);
-  }
   
     
     chrome.runtime.sendMessage({action: 'processProfileStart',status:'Iniciando scrap de los perfiles😎...'}, async function(response){
@@ -281,9 +269,8 @@ const viewProfiles = async() => {
 
                 const elem = dataProfiles[i];
 
-                if(!elem.scrap){
+                if(!elem.scrap){                    
                     await sleep(5);
-                    saveDataProfiles(elem);
                     chrome.runtime.sendMessage({action: 'sendProfile', url: elem.link, name: elem.name, status:`Abriendo el perfil de: ${elem.name}.😬`});
                     return;
                 }else{
@@ -294,6 +281,8 @@ const viewProfiles = async() => {
               
               if(contador >=  10){
                   chrome.runtime.sendMessage({action: 'endScraping',status:'¡El scraping ha finalizado!🥳 Hemos guardado los datos por ti en un archivo ".txt"🧐'});           
+                  // saveDataProfiles(elem);
+                    /*** Enviar datos a una BD Mongo, por ahora solo se almacena en el localstorage */
                   return;
               }
 
@@ -304,11 +293,11 @@ const viewProfiles = async() => {
   
 }
 
-function saveDateProfiles(data){
-  console.log('Enviando data.......')
+const saveDataProfiles =  (data) => {
+  console.log('Enviando data.......');
   fetch("saveDataProfiles.php", {
     method: "POST", 
-    body: {data: data}
+    body: JSON.stringify({data: data}) 
   })
   .then(res => res.json())
   .then(function(res){
